@@ -1,0 +1,823 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>🔥 默契大考驗 - 看誰最了解你！</title>
+
+  <!-- 引入 LINE LIFF SDK -->
+  <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+
+  <style>
+    :root {
+      --primary: #FF5E7E;
+      --line-green: #06C755;
+      --bg-color: #FFF0F3;
+    }
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      max-width: 500px; 
+      margin: 0 auto; 
+      padding: 15px; 
+      background: var(--bg-color); 
+      color: #333; 
+    }
+    .header { text-align: center; margin-bottom: 20px; }
+    .header h1 { color: var(--primary); font-size: 26px; margin: 5px 0; }
+    .card { 
+      background: white; 
+      padding: 20px; 
+      border-radius: 20px; 
+      box-shadow: 0 8px 20px rgba(255, 94, 126, 0.15); 
+      margin-bottom: 15px; 
+    }
+    button { 
+      color: white; 
+      border: none; 
+      padding: 10px 15px; 
+      border-radius: 12px; 
+      cursor: pointer; 
+      width: 100%; 
+      margin-top: 10px; 
+      font-size: 15px; 
+      font-weight: bold; 
+      transition: transform 0.1s, opacity 0.2s;
+    }
+    button:active { transform: scale(0.98); }
+    .btn-line { background-color: var(--line-green); }
+    .btn-submit { background: linear-gradient(135deg, #FF5E7E, #FF9966); }
+    .btn-copy { background-color: #6C5CE7; }
+    .btn-outline { background: transparent; color: #888; border: 1px solid #ddd; font-weight: normal; }
+
+    /* 頁籤導覽列 */
+    .tab-nav {
+      display: flex;
+      background: #EAEAEA;
+      border-radius: 12px;
+      padding: 4px;
+      margin-bottom: 15px;
+    }
+    .tab-btn {
+      flex: 1;
+      padding: 10px;
+      text-align: center;
+      border: none;
+      background: transparent;
+      color: #666;
+      font-weight: bold;
+      border-radius: 10px;
+      margin-top: 0;
+      cursor: pointer;
+    }
+    .tab-btn.active {
+      background: white;
+      color: var(--primary);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+
+    .domain-chip {
+      background: #EFEFEF;
+      color: #444;
+      border: 1px solid #DDD;
+      padding: 8px 12px;
+      border-radius: 20px;
+      font-size: 13px;
+      font-weight: bold;
+      width: auto;
+      margin: 0;
+      cursor: pointer;
+    }
+    .domain-chip:hover { background: var(--primary); color: white; }
+
+    input[type="text"], input[type="email"], textarea, select {
+      width: 100%;
+      padding: 10px 12px;
+      margin: 6px 0 10px 0;
+      box-sizing: border-box;
+      border: 2px solid #EAEAEA;
+      border-radius: 10px;
+      font-size: 14px;
+    }
+    input:focus, textarea:focus, select:focus {
+      border-color: var(--primary);
+      outline: none;
+    }
+
+    .question-box { background: #FAF9FE; padding: 12px; border-radius: 12px; margin-top: 15px; border: 1px solid #EFE8FA; }
+    .option-btn { 
+      background: white; 
+      color: #444; 
+      border: 2px solid #EAEAEA; 
+      margin: 6px 0; 
+      text-align: left; 
+      font-weight: normal; 
+    }
+    .option-btn.selected { 
+      background: #FFF0F3; 
+      border-color: var(--primary); 
+      color: var(--primary); 
+      font-weight: bold; 
+    }
+    
+    .user-bar { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      background: #FFE3E8; 
+      padding: 10px 15px; 
+      border-radius: 30px; 
+      margin-bottom: 15px; 
+    }
+    .hidden { display: none; }
+    .result-item { 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      border-bottom: 1px dashed #eee; 
+      padding: 10px 0; 
+    }
+    .rank-badge {
+      background: #FFD166;
+      color: #333;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 12px;
+      font-weight: bold;
+      margin-right: 6px;
+    }
+    .my-quiz-item {
+      background: #FAF9FE;
+      border: 1px solid #EFE8FA;
+      border-radius: 12px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .template-item {
+      background: #FFF;
+      border: 1px solid #DDD;
+      border-radius: 10px;
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .lock-box {
+      background: #F5F5F5;
+      border: 2px dashed #CCC;
+      padding: 15px;
+      border-radius: 12px;
+      text-align: center;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🔥 默契大考驗</h1>
+    <p style="color: #666; font-size: 14px;">測測看朋友誰最了解你！</p>
+  </div>
+
+  <!-- 使用者狀態列 -->
+  <div id="user-info-bar" class="user-bar hidden">
+    <span>😎 <strong id="user-display-name">使用者</strong></span>
+    <button id="btn-logout" class="btn-outline" style="width: auto; margin:0; padding: 4px 10px;">登出</button>
+  </div>
+
+  <!-- 主分頁導覽列 (只對首頁使用者顯示) -->
+  <div id="main-nav" class="tab-nav">
+    <button class="tab-btn active" onclick="switchTab('tab-create')">✏️ 建立問卷</button>
+    <button class="tab-btn" onclick="switchTab('tab-my-quizzes')">📂 我的問卷</button>
+  </div>
+
+  <!-- 1. 出題與自訂考題區塊 (首頁預設) -->
+  <div id="tab-create" class="card tab-content">
+    <!-- 未登入提示區塊 -->
+    <div id="auth-view">
+      <h2 style="margin-top:0;">⚡ 出題者登入</h2>
+      <p style="font-size: 13px; color: #777;">建立者需登入 LINE 帳號，才能產生專屬考題與查看個人排行榜！</p>
+      <button id="btn-line-login" class="btn-line">💬 使用 LINE 帳號一鍵登入</button>
+
+      <div id="email-prompt-box" class="hidden" style="margin-top: 15px; padding-top: 15px; border-top: 1px dashed #ccc;">
+        <p style="font-size: 14px; color: #E63946; font-weight: bold; margin: 0 0 5px 0;">📧 請補充輸入電子郵件：</p>
+        <input type="email" id="input-supplement-email" placeholder="請先輸入帳號，並點選下方信箱網域">
+        <div style="margin: 8px 0; display: flex; flex-wrap: wrap; gap: 6px;">
+          <button type="button" class="domain-chip" onclick="appendDomain('@gmail.com')">@gmail.com</button>
+          <button type="button" class="domain-chip" onclick="appendDomain('@outlook.com')">@outlook.com</button>
+          <button type="button" class="domain-chip" onclick="appendDomain('@hotmail.com')">@hotmail.com</button>
+          <button type="button" class="domain-chip" onclick="appendDomain('@icloud.com')">@icloud.com</button>
+        </div>
+        <button id="btn-submit-email" class="btn-submit">確認儲存並登入</button>
+      </div>
+    </div>
+
+    <!-- 已登入後顯示出題介面 -->
+    <div id="create-view" class="hidden">
+      <h2 style="margin-top:0;">✏️ 製作你的專屬考題</h2>
+
+      <!-- 自訂出題者顯示姓名 -->
+      <div style="background: #FFF8E7; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #FFE0B2;">
+        <label style="font-size: 13px; font-weight: bold; color: #D97706;">👤 本份問卷顯示的出題者名稱：</label>
+        <input type="text" id="quiz-custom-creator-name" placeholder="例如：小明 / 三班班長 (不必與 LINE 相同)">
+        <p style="font-size: 11px; color: #888; margin: 0;">* 系統後台會自動記憶建立此問卷的 LINE 帳號。</p>
+      </div>
+      
+      <!-- 選項 1: 預設模板出題 -->
+      <div style="background: #F8F9FA; padding: 12px; border-radius: 12px; margin-bottom: 15px;">
+        <h3 style="margin: 0 0 5px 0; font-size: 15px;">📚 選擇預設題目與答案：</h3>
+        <p style="font-size: 12px; color: #888; margin: 0 0 10px 0;">請從選項中點選「最像你自己」的一項作為標準答案：</p>
+        <div id="template-questions-list"><p style="color:#888;">載入模板中...</p></div>
+      </div>
+
+      <!-- 選項 2: 完全自訂題目 -->
+      <div id="custom-section" style="margin-bottom: 15px;">
+        <div id="custom-locked-box" class="lock-box">
+          <h3 style="margin: 0 0 6px 0; font-size: 15px; color: #666;">🔒 自訂題目功能 (需經審核解鎖)</h3>
+          <p style="font-size: 12px; color: #888; margin: 0 0 10px 0;">若想自己出題與設計選項，請點擊下方按鈕向管理員申請。</p>
+          <button type="button" id="btn-request-custom" class="btn-outline" style="background: white;">提出自訂權限申請 📩</button>
+        </div>
+
+        <div id="custom-unlocked-box" class="hidden" style="background: #FFF8E7; padding: 12px; border-radius: 12px; border: 1px solid #FFE0B2;">
+          <h3 style="margin: 0 0 5px 0; font-size: 15px; color: #D97706;">✨ 完全自訂題目 (已獲得認證)</h3>
+          <input type="text" id="custom-q-title" placeholder="題目名稱 (例如: 我最討厭吃的食物?)">
+          <input type="text" id="custom-q-correct" placeholder="🎯 正確答案 (例如: 青椒)">
+          <input type="text" id="custom-q-opt2" placeholder="干擾選項 2 (例如: 苦瓜)">
+          <input type="text" id="custom-q-opt3" placeholder="干擾選項 3 (例如: 茄子)">
+          <input type="text" id="custom-q-opt4" placeholder="干擾選項 4 (例如: 洋蔥)">
+          <button type="button" id="btn-add-custom" class="btn-outline" style="background: white;">加到我的考題清單</button>
+        </div>
+      </div>
+
+      <!-- 已選取的考題清單 -->
+      <div id="selected-quiz-summary" style="margin-top: 15px;">
+        <h3>📋 已設定的測驗題目 (<span id="selected-count">0</span>)</h3>
+        <div id="my-questions-preview"></div>
+      </div>
+
+      <button id="btn-submit-quiz" class="btn-submit" style="margin-top: 20px;">完成！生成考題連結 🚀</button>
+      
+      <div id="share-link-area" class="hidden" style="margin-top: 20px; background: #F8F9FA; padding: 15px; border-radius: 12px;">
+        <p style="margin-top:0; font-weight:bold;">🎉 考題已建立！分享給朋友：</p>
+        <button id="btn-share-line" class="btn-line">📲 傳送到 LINE 群組/好友</button>
+        <button id="btn-copy-link" class="btn-copy">📋 複製連結 (發 IG 限動/發文)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 【我的問卷】列表與個人專屬排行榜區塊 -->
+  <div id="tab-my-quizzes" class="card tab-content hidden">
+    <h2 style="margin-top:0;">📂 我的歷史問卷</h2>
+    <div id="my-quizzes-list">
+      <p style="color: #999; font-size: 14px;">請先登入 LINE 帳號以查看你建立過的所有問卷。</p>
+    </div>
+  </div>
+
+  <!-- 3. 受測者答題區塊 (僅點擊專屬連結 ?id=xxx 時開啟) -->
+  <div id="quiz-view" class="card hidden">
+    <h2 id="quiz-title" style="margin-top:0;">解答默契測驗</h2>
+
+    <div style="background: #FFF8E7; padding: 12px; border-radius: 12px; margin-bottom: 15px; border: 1px solid #FFE0B2;">
+      <label style="font-size: 13px; font-weight: bold; color: #D97706;">1. 真實姓名 </label>
+      <input type="text" id="input-real-name" placeholder="例如：陳大明">
+
+      <label style="font-size: 13px; font-weight: bold; color: #D97706;">2. 排行榜暱稱 (必填)</label>
+      <input type="text" id="input-nickname" placeholder="例如：阿明 / 籃球狂人">
+    </div>
+
+    <div id="questions-answer-container"><p style="color:#888;">載入題目中...</p></div>
+
+    <button id="btn-submit-answers" class="btn-submit">送出答案看得分 🎯</button>
+    
+    <!-- 答題完畢後顯示該份問卷的專屬排行榜 -->
+    <div id="result-box" class="hidden" style="margin-top: 20px;">
+      <div style="text-align: center;">
+        <h2 id="result-score" style="color: var(--primary); font-size: 32px; margin: 5px 0;"></h2>
+        <p id="result-comment" style="color: #666;"></p>
+      </div>
+
+      <div style="margin-top: 25px; border-top: 1px dashed #DDD; padding-top: 15px;">
+        <h3 style="margin-bottom: 10px;">🏆 本問卷即時默契排行榜</h3>
+        <div id="single-quiz-rank-list"><p style="color: #999; font-size: 14px;">載入排行榜中...</p></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 4. 意見與 Bug 回報區塊 -->
+  <div class="card" style="background: #FAFAFA; border: 1px solid #EEE;">
+    <h3 style="margin-top:0; font-size: 16px;">💬 意見與 Bug 反應</h3>
+    <p style="font-size: 12px; color: #777; margin-top: -5px;">遇到問題或有新想法？歡迎寫信給開發者！</p>
+    
+    <select id="feedback-type">
+      <option value="bug">🐛 發現 Bug / 系統錯誤</option>
+      <option value="suggestion">💡 功能建議 / 新題目點子</option>
+      <option value="other">❓ 其他意見</option>
+    </select>
+
+    <textarea id="feedback-content" rows="3" placeholder="請詳細說明你遇到的情況或建議..."></textarea>
+    <input type="text" id="feedback-contact" placeholder="你的 Email">
+
+    <button id="btn-submit-feedback" class="btn-outline" style="background: white; border-color: #CCC;">送出反饋 📨</button>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, arrayUnion, addDoc, collection, onSnapshot, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyCF76Y2nN3Phj8PF28SLtPy6fpOUYudCq8",
+      authDomain: "friend-quiz-app-bdcaa.firebaseapp.com",
+      projectId: "friend-quiz-app-bdcaa",
+      storageBucket: "friend-quiz-app-bdcaa.firebasestorage.app",
+      messagingSenderId: "740074181811",
+      appId: "1:740074181811:web:386275b872281863678cc6"
+    };
+
+    // ⚠️ 請替換為你的 LIFF ID
+    const LIFF_ID = "2007542435-ym7AMOui";
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    const ALLOWED_DOMAINS = ['@gmail.com', '@outlook.com', '@hotmail.com', '@icloud.com'];
+
+    let currentUser = null;
+    let pendingLineProfile = null;
+    let templateQuestions = []; 
+    let myBuiltQuiz = [];       
+    let takerSelectedAnswers = [];
+    let userIP = "未知 IP";
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const quizId = urlParams.get('id');
+
+    window.switchTab = (tabId) => {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+
+      if (tabId === 'tab-create') document.querySelectorAll('.tab-btn')[0].classList.add('active');
+      if (tabId === 'tab-my-quizzes') document.querySelectorAll('.tab-btn')[1].classList.add('active');
+
+      document.getElementById(tabId).classList.remove('hidden');
+    };
+
+    async function fetchUserIP() {
+      try {
+        const controller = new AbortController();
+        setTimeout(() => controller.abort(), 2000);
+        const res = await fetch('https://api.ipify.org?format=json', { signal: controller.signal });
+        const data = await res.json();
+        userIP = data.ip || "未知 IP";
+      } catch (e) {
+        userIP = "127.0.0.1 (保護中)";
+      }
+    }
+
+    window.appendDomain = (domain) => {
+      const emailInput = document.getElementById('input-supplement-email');
+      let val = emailInput.value.trim();
+      if (val.includes('@')) val = val.split('@')[0];
+      if (val.length === 0) return alert('請先輸入帳號名稱！');
+      emailInput.value = val + domain;
+    };
+
+    async function initLiff() {
+      try {
+        await liff.init({ liffId: LIFF_ID });
+
+        if (liff.isLoggedIn()) {
+          const profile = await liff.getProfile();
+          const userEmail = liff.getDecodedIDToken() ? liff.getDecodedIDToken().email : null;
+
+          if (userEmail) {
+            onUserAuthenticated({
+              uid: profile.userId,
+              displayName: profile.displayName,
+              email: userEmail
+            });
+          } else {
+            pendingLineProfile = profile;
+            document.getElementById('email-prompt-box').classList.remove('hidden');
+            document.getElementById('btn-line-login').classList.add('hidden');
+          }
+        } else if (liff.isInClient()) {
+          liff.login();
+        }
+      } catch (err) {
+        console.error("LIFF 初始化失敗:", err);
+      }
+    }
+
+    document.getElementById('btn-submit-email').onclick = () => {
+      const inputEmail = document.getElementById('input-supplement-email').value.trim().toLowerCase();
+      const isValidDomain = ALLOWED_DOMAINS.some(domain => inputEmail.endsWith(domain));
+
+      if (!isValidDomain) {
+        return alert('❌ 不允許的信箱！只接受常用個人信箱。');
+      }
+
+      const user = {
+        uid: pendingLineProfile ? pendingLineProfile.userId : ('line_' + Math.random().toString(36).substring(2, 9)),
+        displayName: pendingLineProfile ? pendingLineProfile.displayName : 'LINE 同學',
+        email: inputEmail
+      };
+
+      onUserAuthenticated(user);
+    };
+
+    async function onUserAuthenticated(user) {
+      currentUser = user;
+      document.getElementById('user-info-bar').classList.remove('hidden');
+      document.getElementById('user-display-name').innerText = user.displayName || '已登入同學';
+      document.getElementById('quiz-custom-creator-name').value = user.displayName || '';
+
+      await setDoc(doc(db, "users", user.uid), {
+        uid: user.uid,
+        displayName: user.displayName || '同學',
+        email: user.email || '未提供'
+      }, { merge: true });
+
+      checkCustomPermission(user.uid);
+
+      document.getElementById('auth-view').classList.add('hidden');
+      document.getElementById('create-view').classList.remove('hidden');
+
+      loadMyQuizzes(user.uid);
+    }
+
+    // 載入【我的問卷】歷史紀錄（僅出題者可見自己的問卷）
+    async function loadMyQuizzes(uid) {
+      const container = document.getElementById('my-quizzes-list');
+      try {
+        const q = query(collection(db, "quizzes"), where("creatorUid", "==", uid));
+        const querySnapshot = await getDocs(q);
+
+        if (querySnapshot.empty) {
+          container.innerHTML = `<p style="color: #999; font-size: 14px;">你尚未建立過任何問卷。</p>`;
+          return;
+        }
+
+        let html = '';
+        querySnapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          const quizUrl = `${window.location.origin}${window.location.pathname}?id=${docSnap.id}`;
+          const results = data.results || [];
+          results.sort((a, b) => b.score - a.score);
+
+          html += `
+            <div class="my-quiz-item">
+              <div style="font-weight: bold; font-size: 15px; color: var(--primary);">🧩 ${data.creatorName} 的問卷</div>
+              <div style="font-size: 12px; color: #666; margin: 4px 0;">答題人數：${results.length} 人</div>
+              
+              <button class="btn-copy" style="padding: 6px; font-size: 12px; margin-bottom: 8px;" onclick="copyLink('${quizUrl}')">📋 複製專屬問卷連結</button>
+              
+              <div style="background: white; padding: 8px; border-radius: 8px; font-size: 12px;">
+                <strong>🏆 該問卷排行榜：</strong>
+                ${results.length === 0 ? '<div style="color:#888;">尚無人作答</div>' : 
+                  results.map((r, i) => `<div style="display:flex; justify-space-between; margin-top:3px;"><span>${i+1}. ${r.nickname}</span><strong>${r.score} 分</strong></div>`).join('')
+                }
+              </div>
+            </div>
+          `;
+        });
+        container.innerHTML = html;
+      } catch (err) {
+        console.error("載入我的問卷失敗:", err);
+      }
+    }
+
+    window.copyLink = (url) => {
+      navigator.clipboard.writeText(url).then(() => alert('✅ 專屬連結已複製！'));
+    };
+
+    async function fetchSystemQuestions() {
+      try {
+        const docRef = doc(db, "system_config", "quiz_template");
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists() && docSnap.data().questions) {
+          templateQuestions = docSnap.data().questions;
+        } else {
+          templateQuestions = [];
+        }
+        renderTemplateQuestions();
+      } catch (err) {
+        console.error("載入後端題目失敗:", err);
+      }
+    }
+
+    function renderTemplateQuestions() {
+      const container = document.getElementById('template-questions-list');
+      if (templateQuestions.length === 0) {
+        container.innerHTML = `<p style="color:#888; font-size:13px;">資料庫無預設題目或載入中...</p>`;
+        return;
+      }
+      container.innerHTML = templateQuestions.map((tq, idx) => `
+        <div class="template-item">
+          <p style="margin: 0 0 6px 0; font-weight: bold;">Q. ${tq.q}</p>
+          <div style="font-size: 13px; color: #555;">選擇「最像你自己」的答案：</div>
+          ${tq.options.map((opt, oIdx) => `
+            <label style="display: block; margin: 6px 0; font-size: 13px; cursor: pointer;">
+              <input type="radio" name="tpl-ans-${idx}" value="${oIdx}" onchange="selectTemplateAnswer(${idx}, ${oIdx})"> ${opt}
+            </label>
+          `).join('')}
+        </div>
+      `).join('');
+    }
+
+    window.selectTemplateAnswer = (templateIdx, selectedOptionIndex) => {
+      const tq = templateQuestions[templateIdx];
+
+      const quizItem = {
+        id: tq.id,
+        q: tq.q,
+        options: tq.options,
+        answer: selectedOptionIndex
+      };
+
+      const existingIdx = myBuiltQuiz.findIndex(q => q.id === tq.id);
+      if (existingIdx >= 0) {
+        myBuiltQuiz[existingIdx] = quizItem;
+      } else {
+        myBuiltQuiz.push(quizItem);
+      }
+      updateMyQuizPreview();
+    };
+
+    function checkCustomPermission(uid) {
+      onSnapshot(doc(db, "users", uid), (docSnap) => {
+        if (docSnap.exists() && docSnap.data().canCustom === true) {
+          document.getElementById('custom-locked-box').classList.add('hidden');
+          document.getElementById('custom-unlocked-box').classList.remove('hidden');
+        } else {
+          document.getElementById('custom-locked-box').classList.remove('hidden');
+          document.getElementById('custom-unlocked-box').classList.add('hidden');
+        }
+      });
+    }
+
+    document.getElementById('btn-request-custom').onclick = async () => {
+      if (!currentUser) return;
+      try {
+        await addDoc(collection(db, "feedbacks"), {
+          type: "permission_request",
+          content: `使用者【${currentUser.displayName || currentUser.email}】(UID: ${currentUser.uid}) 申請開通自訂題目權限。`,
+          contact: currentUser.email || "LINE 登入",
+          uid: currentUser.uid,
+          createdAt: new Date()
+        });
+        alert('✅ 權限申請已送出！請等待管理員審核授權。');
+      } catch (e) {
+        alert('申請失敗: ' + e.message);
+      }
+    };
+
+    document.getElementById('btn-add-custom').onclick = () => {
+      const qTitle = document.getElementById('custom-q-title').value.trim();
+      const correctOpt = document.getElementById('custom-q-correct').value.trim();
+      const opt2 = document.getElementById('custom-q-opt2').value.trim();
+      const opt3 = document.getElementById('custom-q-opt3').value.trim();
+      const opt4 = document.getElementById('custom-q-opt4').value.trim();
+
+      if (!qTitle || !correctOpt || !opt2 || !opt3 || !opt4) {
+        return alert('完全自訂題目請填寫「題目」與全部「4 個選項」！');
+      }
+
+      const rawOptions = [correctOpt, opt2, opt3, opt4];
+      const shuffledOptions = [...rawOptions].sort(() => 0.5 - Math.random());
+      const correctIndex = shuffledOptions.indexOf(correctOpt);
+
+      myBuiltQuiz.push({
+        id: 'custom_' + Date.now(),
+        q: qTitle,
+        options: shuffledOptions,
+        answer: correctIndex
+      });
+
+      document.getElementById('custom-q-title').value = '';
+      document.getElementById('custom-q-correct').value = '';
+      document.getElementById('custom-q-opt2').value = '';
+      document.getElementById('custom-q-opt3').value = '';
+      document.getElementById('custom-q-opt4').value = '';
+
+      updateMyQuizPreview();
+    };
+
+    function updateMyQuizPreview() {
+      document.getElementById('selected-count').innerText = myBuiltQuiz.length;
+      const previewDiv = document.getElementById('my-questions-preview');
+      previewDiv.innerHTML = myBuiltQuiz.map((q, idx) => `
+        <div style="background:#FFF; border:1px solid #EEE; padding:10px; border-radius:8px; margin-top:6px; font-size:13px;">
+          <strong>Q${idx + 1}. ${q.q}</strong>
+          <div style="color:#666; margin-top:4px;">你的答案: <strong style="color:var(--primary);">${q.options[q.answer]}</strong></div>
+        </div>
+      `).join('');
+    }
+
+    async function initPage() {
+      fetchUserIP();
+      await fetchSystemQuestions();
+      initLiff();
+
+      // 當點擊專屬網址時 (帶有 ?id= 參數)
+      if (quizId) {
+        document.getElementById('main-nav').classList.add('hidden');
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
+        document.getElementById('quiz-view').classList.remove('hidden');
+        loadQuiz(quizId);
+      }
+    }
+
+    initPage();
+
+    document.getElementById('btn-line-login').onclick = () => {
+      if (liff && !liff.isLoggedIn()) {
+        liff.login();
+      }
+    };
+
+    document.getElementById('btn-logout').onclick = () => {
+      if (liff && liff.isLoggedIn()) {
+        liff.logout();
+      }
+      location.reload();
+    };
+
+    document.getElementById('btn-submit-quiz').onclick = async () => {
+      if (myBuiltQuiz.length === 0) return alert('請至少選擇或建立 1 個題目！');
+      const customCreatorName = document.getElementById('quiz-custom-creator-name').value.trim() || currentUser.displayName || "同學";
+
+      try {
+        const quizRef = await addDoc(collection(db, "quizzes"), {
+          creatorUid: currentUser.uid,
+          creatorName: customCreatorName,
+          quizItems: myBuiltQuiz,
+          createdAt: new Date()
+        });
+
+        const quizDocId = quizRef.id;
+        document.getElementById('share-link-area').classList.remove('hidden');
+
+        document.getElementById('btn-share-line').onclick = async () => {
+          const shareUrl = `${window.location.origin}${window.location.pathname}?id=${quizDocId}`;
+          const messageText = `🔥 來測測看你跟【${customCreatorName}】的默契有多高！👇\n${shareUrl}`;
+
+          if (liff && liff.isApiAvailable('shareTargetPicker')) {
+            try {
+              const res = await liff.shareTargetPicker([{ type: "text", text: messageText }]);
+              if (res) alert("✅ 已成功發送給好友/群組！");
+            } catch (e) {
+              console.log("分享已取消", e);
+            }
+          } else {
+            window.open(`https://line.me/R/share?text=${encodeURIComponent(messageText)}`, '_blank');
+          }
+        };
+
+        document.getElementById('btn-copy-link').onclick = () => {
+          const shareUrl = `${window.location.origin}${window.location.pathname}?id=${quizDocId}`;
+          navigator.clipboard.writeText(shareUrl).then(() => {
+            alert('✅ 連結已複製！快發到 IG 限動或 LINE 聊天室吧！');
+          });
+        };
+
+        loadMyQuizzes(currentUser.uid);
+      } catch (e) {
+        alert('建立問卷失敗：' + e.message);
+      }
+    };
+
+    // 載入特定問卷內容與該問卷專屬排行榜
+    async function loadQuiz(id) {
+      const hasAnsweredKey = `answered_quiz_${id}`;
+      const savedScore = localStorage.getItem(hasAnsweredKey);
+
+      const docSnap = await getDoc(doc(db, "quizzes", id));
+      if (!docSnap.exists()) return alert('找不到這個測驗，可能已被刪除！');
+
+      const data = docSnap.data();
+      const quizItems = data.quizItems || [];
+      takerSelectedAnswers = Array(quizItems.length).fill(null);
+
+      document.getElementById('quiz-title').innerText = `🧩 ${data.creatorName} 的默契考驗`;
+
+      // 即時監聽該份問卷的專屬排行榜
+      listenToSingleQuizRank(id);
+
+      if (savedScore !== null) {
+        document.getElementById('questions-answer-container').innerHTML = `
+          <div style="text-align: center; padding: 20px; background: #FFF0F3; border-radius: 12px;">
+            <h3>⚠️ 你已經完成過這個測驗囉！</h3>
+            <p style="font-size: 24px; color: var(--primary); font-weight: bold; margin: 10px 0;">上次得分：${savedScore} 分</p>
+          </div>
+        `;
+        document.getElementById('btn-submit-answers').classList.add('hidden');
+        document.getElementById('result-box').classList.remove('hidden');
+        document.getElementById('result-score').innerText = `${savedScore} 分！`;
+        document.getElementById('result-comment').innerText = "你之前已經提交過答案囉！下方是大家目前的默契排行：";
+        return;
+      }
+
+      const container = document.getElementById('questions-answer-container');
+      container.innerHTML = quizItems.map((q, qIndex) => `
+        <div class="question-box">
+          <p style="margin: 0 0 8px 0;"><strong>Q${qIndex + 1}. ${q.q}</strong></p>
+          ${q.options.map((opt, oIndex) => `
+            <button class="option-btn q-ans-${qIndex}" onclick="selectTakerAnswer(${qIndex}, ${oIndex}, this)">${opt}</button>
+          `).join('')}
+        </div>
+      `).join('');
+
+      window.selectTakerAnswer = (qIndex, oIndex, btn) => {
+        takerSelectedAnswers[qIndex] = oIndex;
+        document.querySelectorAll(`.q-ans-${qIndex}`).forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+      };
+
+      document.getElementById('btn-submit-answers').onclick = async () => {
+        const realName = document.getElementById('input-real-name').value.trim();
+        const nickname = document.getElementById('input-nickname').value.trim();
+
+        if (!realName) return alert('請填寫真實姓名！');
+        if (!nickname) return alert('請填寫排行榜暱稱！');
+        if (takerSelectedAnswers.includes(null)) return alert('請回答完所有題目！');
+
+        let correctCount = 0;
+        takerSelectedAnswers.forEach((ans, idx) => {
+          if (ans === quizItems[idx].answer) correctCount++;
+        });
+        const finalScore = Math.round((correctCount / quizItems.length) * 100);
+
+        await updateDoc(doc(db, "quizzes", id), {
+          results: arrayUnion({
+            uid: currentUser ? currentUser.uid : "guest",
+            realName: realName,
+            nickname: nickname,
+            displayName: nickname,
+            score: finalScore,
+            ip: userIP,
+            updatedAt: new Date()
+          })
+        });
+
+        localStorage.setItem(hasAnsweredKey, finalScore.toString());
+
+        document.getElementById('btn-submit-answers').classList.add('hidden');
+        const resultBox = document.getElementById('result-box');
+        resultBox.classList.remove('hidden');
+        document.getElementById('result-score').innerText = `${finalScore} 分！`;
+
+        let comment = "繼續加油，再多了解對方一點！💪";
+        if (finalScore === 100) comment = "狂！你們根本是靈魂交會的神隊友！🔥";
+        else if (finalScore >= 75) comment = "太強了！你們默契超級好！✨";
+        else if (finalScore >= 50) comment = "還算了解，有及格喔！👀";
+        
+        document.getElementById('result-comment').innerText = comment;
+      };
+    }
+
+    // 監聽單一問卷的專屬排行榜
+    function listenToSingleQuizRank(quizDocId) {
+      onSnapshot(doc(db, "quizzes", quizDocId), (docSnap) => {
+        const listDiv = document.getElementById('single-quiz-rank-list');
+        if (docSnap.exists() && docSnap.data().results) {
+          let results = docSnap.data().results;
+          results.sort((a, b) => b.score - a.score);
+
+          listDiv.innerHTML = results.map((r, index) => `
+            <div class="result-item">
+              <div>
+                <span class="rank-badge">第 ${index + 1} 名</span>
+                <strong>${r.displayName}</strong>
+              </div>
+              <span style="color: var(--primary); font-weight: bold; font-size: 18px;">${r.score} 分</span>
+            </div>
+          `).join('');
+        } else {
+          listDiv.innerHTML = `<p style="color: #999; font-size: 14px;">這份問卷還沒有人回答，搶頭香成為第一個吧！</p>`;
+        }
+      });
+    }
+
+    document.getElementById('btn-submit-feedback').onclick = async () => {
+      const type = document.getElementById('feedback-type').value;
+      const content = document.getElementById('feedback-content').value.trim();
+      const contact = document.getElementById('feedback-contact').value.trim();
+
+      if (!content) return alert('請填寫內容後再送出喔！');
+
+      try {
+        await addDoc(collection(db, "feedbacks"), {
+          type: type,
+          content: content,
+          contact: contact || "未提供",
+          ip: userIP,
+          createdAt: new Date()
+        });
+
+        alert('✅ 感謝你的反饋！資料已成功送出給開發者。');
+        document.getElementById('feedback-content').value = '';
+        document.getElementById('feedback-contact').value = '';
+      } catch (err) {
+        alert('送出失敗：' + err.message);
+      }
+    };
+  </script>
+</body>
+</html>
